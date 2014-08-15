@@ -21,6 +21,9 @@ for ARCH in amd64; do
     # We specify linux-image-virtual via addpkg to make sure it gets installed in the chroot
     # while /proc is bind-mounted. (The postinst script for the kernel package looks at
     # /proc/cpuinfo and will complain if it doesn't contain PAE in CPU flags.)
+    # 
+    # We specify linux-headers-virtual via addpkg because virtualbox-guest-dkms won't work
+    # otherwise.
     $VMBUILDER vbox ubuntu \
         $DEBOOT_ARG \
         $EXTRA_OPTS \
@@ -36,6 +39,7 @@ for ARCH in amd64; do
         --variant=buildd \
         --components=main,universe,multiverse \
         --addpkg=linux-image-virtual \
+        --addpkg=linux-headers-virtual \
         --addpkg=dkms \
         --addpkg=virtualbox-guest-utils \
         --addpkg=virtualbox-guest-x11 \
