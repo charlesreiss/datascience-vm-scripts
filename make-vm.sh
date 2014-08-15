@@ -3,16 +3,9 @@
 set -x
 set -e
 
-MIRROR=http://us.archive.ubuntu.com/ubuntu
-SCRIPT_DIR=$PWD
-VMBUILDER=../vmbuilder/vmbuilder
-DIST=trusty
-EXTRA_OPTS=--proxy=http://localhost:3142/
-TARGET_USER=charles
+. make-vm-config.sh
 
-#for ARCH in amd64 i386; do
-for ARCH in amd64; do
-#for ARCH in i386; do
+for ARCH in $ARCHS; do
     if [ -e $SCRIPT_DIR/debootstrap-${ARCH}-${DIST}.tgz ]; then
         DEBOOT_ARG="--debootstrap-tarball=$SCRIPT_DIR/debootstrap-${ARCH}-${DIST}.tgz"
     else
@@ -53,6 +46,6 @@ for ARCH in amd64; do
         --mem=1024 \
         --cpus=1 \
         --mac= \
-        --arch=$ARCH 2>&1 | tee -a log
+        --arch=$ARCH 2>&1 | tee -a make-vm.log
     chown -R $TARGET_USER:$TARGET_USER ./datascience-vm-$ARCH
 done

@@ -1,0 +1,131 @@
+=== modified file 'VMBuilder/disk.py'
+--- VMBuilder/disk.py	2012-01-25 13:48:24 +0000
++++ VMBuilder/disk.py	2014-08-15 17:58:12 +0000
+@@ -190,6 +190,8 @@
+         run_cmd('kpartx', '-d', self.filename, ignore_fail=ignore_fail)
+ 
+         for part in self.partitions:
++            if ignore_fail and not part.filename:
++                continue
+             logging.debug("Removing partition %s" % part.filename)
+             parted_oldmap=part.filename[len("/dev/mapper/"):-1]+"p"+part.filename[-1]
+             dmsetup_output = run_cmd('dmsetup', 'info', parted_oldmap, ignore_fail=True)
+
+=== modified file 'VMBuilder/plugins/virtualbox/templates/vm_deploy_script.tmpl'
+--- VMBuilder/plugins/virtualbox/templates/vm_deploy_script.tmpl	2010-02-24 22:16:46 +0000
++++ VMBuilder/plugins/virtualbox/templates/vm_deploy_script.tmpl	2014-08-15 17:55:52 +0000
+@@ -2,7 +2,7 @@
+ #! /usr/bin/env bash
+ ###############################################################################
+ #
+-# This script is used to create und register a new VM
++# This script is used to create and register a new VM
+ # in VirtualBox
+ #
+ ###############################################################################
+@@ -17,20 +17,20 @@
+ os_type="Other"
+ #end if
+ 
++#if $is32
++os_64=""
++#else
++os_64="_64"
++#end if
++
+ disk_path="#echo os.path.abspath(os.path.dirname($vm_disks[0]))#"
+ 
+ 
+-VBoxManage createvm -name $vm_name -ostype \$os_type -register
+-
+-VBoxManage openmedium #slurp
+-#set $i = 0
+-#for $disk in $vm_disks
+-    #set $i = $i + 1
+-    #set $disk = os.path.basename(disk)
+-disk \${disk_path}/$disk -type normal #slurp
+-#end for
+-
+-VBoxManage modifyvm $vm_name -memory $memory -cpus $cpus -sata on #slurp
++VBoxManage createvm --name $vm_name --ostype \$os_type\$os_64 --register
++
++VBoxManage modifyvm $vm_name --memory $memory --cpus $cpus
++VBoxManage storagectl $vm_name --name sata --add sata --bootable on
++
+ #set $i = 0
+ #for $disk in $vm_disks
+     #set $i = $i + 1
+@@ -38,28 +38,22 @@
+     #if $i >= 31
+     	#break
+     #end if
+-    #if $i == 1
+-    	-hda \${disk_path}/$disk #slurp
+-    #else if $i == 2
+-    	-hdb \${disk_path}/$disk #slurp
+-    #else if $i == 3
+-    	-hdd \${disk_path}/$disk #slurp
+-    #else
+-        -sataport${i} \${disk_path}/$disk #slurp
+-    #end if
++
++    VBoxManage storageattach $vm_name --storagectl sata --port $i --device 0 --type hdd --medium \${disk_path}/$disk
+ #end for
+ 
+-#if $mac
+-VBoxManage modifyvm $vm_name -macaddress1 $mac
+-#end if
+ 
+ #if $ip
+ #if $ip == "dhcp"
+-VBoxManage modifyvm $vm_name -nic1 nat
++VBoxManage modifyvm $vm_name --nic1 nat
+ #else
+-VBoxManage modifyvm $vm_name -nic1 intnet 
+-#end if
++VBoxManage modifyvm $vm_name --nic1 intnet 
++#end if
++#end if
++
++#if $mac
++VBoxManage modifyvm $vm_name --macaddress1 $mac
+ #end if
+ 
+ #activating PAE support for the CPU because some OS (e.g. ubuntu server ) won't boot in a virtual machine without it
+-VBoxManage modifyvm $vm_name -pae on
++VBoxManage modifyvm $vm_name --pae on
+
+=== modified file 'VMBuilder/plugins/virtualbox/vm.py'
+--- VMBuilder/plugins/virtualbox/vm.py	2011-08-16 14:00:21 +0000
++++ VMBuilder/plugins/virtualbox/vm.py	2014-08-15 17:56:11 +0000
+@@ -36,6 +36,7 @@
+         group.add_setting('mem', extra_args=['-m'], type='int', default=128, help='Assign MEM megabytes of memory to the guest vm. [default: %default]')
+         group.add_setting('cpus', type='int', default=1, help='Assign NUM cpus to the guest vm. [default: %default]')
+         group.add_setting('vbox-disk-format', metavar='FORMAT', default='vdi', help='Desired disk format. Valid options are: vdi vmdk. [default: %default]')
++        group.add_setting('vbox-32bit', default=False, action='store_true', help='Create a 32-bit VM.')
+ 
+     def convert(self, disks, destdir):
+         self.imgs = []
+@@ -47,7 +48,7 @@
+         hostname = self.context.distro.get_setting('hostname')
+         mac = self.context.get_setting('mac')
+         ip = self.context.get_setting('ip')
+-        vm_deploy_script = VMBuilder.util.render_template('virtualbox', self.context, 'vm_deploy_script', { 'os_type' : self.context.distro.__class__.__name__, 'vm_name' : hostname, 'vm_disks' : self.imgs, 'memory' : self.context.get_setting('mem'), 'cpus' : self.context.get_setting('cpus') })
++        vm_deploy_script = VMBuilder.util.render_template('virtualbox', self.context, 'vm_deploy_script', { 'os_type' : self.context.distro.__class__.__name__, 'vm_name' : hostname, 'vm_disks' : self.imgs, 'memory' : self.context.get_setting('mem'), 'cpus' : self.context.get_setting('cpus'), 'mac': mac, 'ip': ip, 'is32': self.context.get_setting('vbox-32bit') })
+ 
+         script_file = '%s/deploy_%s.sh' % (destdir, hostname)
+         fp = open(script_file, 'w')
+
+=== modified file 'VMBuilder/util.py'
+--- VMBuilder/util.py	2013-03-06 21:18:31 +0000
++++ VMBuilder/util.py	2014-08-15 05:52:34 +0000
+@@ -170,7 +170,7 @@
+         getattr(context, func)(*args, **kwargs)
+     except AttributeError as e:
+         logging.debug('No such method ({}) in context plugin ({})'.format(
+-            func, plugin.__module__))
++            func, context.__module__))
+ 
+ def tmp_filename(suffix='', tmp_root=None):
+     # There is a risk in using tempfile.mktemp(): it's not recommended
+

@@ -1,0 +1,5 @@
+datascience-vm-amd64
+datascience-vm-i386
+make-vm.log
+make-vm-config.sh
+debootstrap-*.tgz

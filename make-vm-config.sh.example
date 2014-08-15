@@ -1,0 +1,7 @@
+MIRROR=http://us.archive.ubuntu.com/ubuntu
+SCRIPT_DIR=$PWD
+VMBUILDER=../vmbuilder/vmbuilder
+DIST=trusty
+EXTRA_OPTS=--proxy=http://localhost:3142/
+TARGET_USER=charles
+ARCHS=amd64 i386
