@@ -83,7 +83,6 @@ if [ x$HAVE_CHROOT = x1 ]; then
     do_apt_get install firefox
     do_apt_get install vim-gnome emacs
     do_apt_get install gnome-terminal
-    do_apt_get install wget
     do_apt_get install acpi-support cups cups-bsd cups-client \
                        xdg-utils xcursor-themes mousetweaks \
                        im-config indicator-session
@@ -121,7 +120,9 @@ fi
 # Basic development packages
 do_apt_get install \
     build-essential \
-    git
+    git \
+    curl \
+    wget
 
 # ----------------------
 # Basic packages
