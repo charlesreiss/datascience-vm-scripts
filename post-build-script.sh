@@ -136,7 +136,8 @@ do_apt_get install \
     python-dev \
     python-pip \
     python-matplotlib \
-    python-numpy
+    python-numpy \
+    python-tk
 
 do_apt_get install libopenblas-base libopenblas-dev
 
