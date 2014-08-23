@@ -43,6 +43,10 @@ else
 
 fi
 
+# So we can debug this, maybe.
+set -e
+set -x
+
 function bind_mount_proc() {
     mount --bind /proc $CHROOT_DIR/proc
 }
@@ -78,14 +82,15 @@ if [ x$HAVE_CHROOT = x1 ]; then
 # (--no-install-recommends avoids installing things like libreoffice which would
 # make the VM image a lot bigger).
     do_apt_get install ubuntu-minimal systemd-services
-    do_apt_get install network-manager network-manager-gnome nm-applet
+    do_apt_get install network-manager network-manager-gnome
     do_apt_get install ubuntu-desktop unity-lens-applications unity-lens-files
     do_apt_get install firefox
-    do_apt_get install vim-gnome emacs
+    do_apt_get install vim-gnome emacs nano
     do_apt_get install gnome-terminal
     do_apt_get install acpi-support cups cups-bsd cups-client \
                        xdg-utils xcursor-themes mousetweaks \
                        im-config indicator-session
+    do_apt_get install gir1.2-gtksource-3.0 # for gedit
 
 # ---------------------
 # Automatic login (see https://wiki.ubuntu.com/LightDM)
@@ -105,7 +110,7 @@ _END_
 favorites=['application://ubiquity.desktop','application://nautilus.desktop','application://gnome-terminal.desktop','application://firefox.desktop','application://unity-control-center.desktop','unity://running-apps','unity://expo-icon','unity://devices']
 
 [com.canonical.Unity.Lenses]
-remote-content-search=none
+remote-content-search='none'
 
 [org.gnome.desktop.screensaver]
 lock-enabled=false
@@ -135,12 +140,19 @@ do_apt_get install \
 
 do_apt_get install libopenblas-base libopenblas-dev
 
+# Lab 1
+do_apt_get install gawk gawk-doc
+
 # Lab 5
 do_apt_get install python-scipy
 
+# Most labs
+do_apt_get install libzmq3-dev
 # We do not install any of these through apt-get because we want more
 # recent versions of them.
-run_in_chroot pip install --allow-external -U scikit-learn panads ipython pyzmg jinja2 tornado
+for package in scikit-learn pandas ipython pyzmq jinja2 tornado; do
+    run_in_chroot pip install --allow-external -U $package
+done
 
 # --------------------
 # Packages for specific assignemnts
@@ -153,7 +165,7 @@ run_in_chroot chown -R $USER:$USER /home/$USER/refine
 run_in_chroot rm /tmp/refine.tar.gz
 
 # Lab 4
-do_apt_get install python-levenshtien
+do_apt_get install python-levenshtein
 
 
 # Lab 6
