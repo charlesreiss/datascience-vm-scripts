@@ -196,9 +196,11 @@ if [ x$BID_MACH_ARCHIVE != none ]; then
     run_in_chroot wget -O /tmp/BIDMach.tar.gz http://bid2.berkeley.edu/bid-data-project/BIDMach_0.9.0-linux-x86_64-full.tar.gz
     run_in_chroot mkdir -p /opt
     run_in_chroot tar -C /opt -zxvf /tmp/BIDMach.tar.gz
+    run_in_chroot rm /tmp/BIDMach.tar.gz
     run_in_chroot ln -s BIDMach_0.9.0-linux-x86_64 /opt/BIDMach
     run_in_chroot mkdir -p /usr/local/bin
-    run_in_chroot ln -s /opt/BIDMach/bin/bidmach /usr/local/bin/bidmach
+    run_in_chroot ln -s /opt/BIDMach/bidmach /usr/local/bin/bidmach
+    do_apt_get install libiomp-dev
 fi
 
 run_in_chroot chown -R $USER:$USER /home/$USER
