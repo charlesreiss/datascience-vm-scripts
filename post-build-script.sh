@@ -75,6 +75,8 @@ if [ x$HAVE_CHROOT = x1 ]; then
 # Initial setup. Some postinst scripts (e.g. openjdk) expect /proc to work.
     bind_mount_proc
 
+    do_apt_get update
+
 # ----------------------
 # Basic UI people expect  (debootstrap should start us out with something very minimal)
 # This list has not been thoroughly minimized to eliminate dependencies, but note that
