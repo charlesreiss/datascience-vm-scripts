@@ -203,6 +203,11 @@ if [ x$BID_MACH_ARCHIVE != none ]; then
     do_apt_get install libiomp-dev
 fi
 
+# IScala
+run_in_chroot wget -O /tmp/IScala.tar.gz https://github.com/mattpap/IScala/releases/download/v0.1/IScala-0.1.tgz
+run_in_chroot tar -C /home/$USER -xvf /tmp/IScala.tar.gz
+run_in_chroot rm /tmp/IScala.tar.gz
+
 run_in_chroot chown -R $USER:$USER /home/$USER
 
 
